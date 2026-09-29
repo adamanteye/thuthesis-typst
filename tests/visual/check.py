@@ -96,7 +96,10 @@ def render_comparison(
             sizes = [page.size for page in (reference, candidate) if page]
             if not sizes:
                 raise SystemExit("cannot compare PDFs without pages")
-            size = (max(item[0] for item in sizes), max(item[1] for item in sizes))
+            size = (
+                max(item[0] for item in sizes),
+                max(item[1] for item in sizes),
+            )
             reference_page = fit_page(reference, size)
             candidate_page = fit_page(candidate, size)
             overlay = Image.merge(
@@ -112,11 +115,16 @@ def render_comparison(
                 "RGB", (size[0] * 3, size[1] + HEADER_HEIGHT), "white"
             )
             comparison.paste(reference_page.convert("RGB"), (0, HEADER_HEIGHT))
-            comparison.paste(candidate_page.convert("RGB"), (size[0], HEADER_HEIGHT))
+            comparison.paste(
+                candidate_page.convert("RGB"), (size[0], HEADER_HEIGHT)
+            )
             comparison.paste(overlay, (size[0] * 2, HEADER_HEIGHT))
             draw = ImageDraw.Draw(comparison)
             draw.text(
-                (12, 12), f"Page {number}: LaTeX reference", fill="black", font=font
+                (12, 12),
+                f"Page {number}: LaTeX reference",
+                fill="black",
+                font=font,
             )
             draw.text(
                 (size[0] + 12, 12),

@@ -1,5 +1,4 @@
 name: LaTeX layout parity
-
 on:
   pull_request:
     paths:
@@ -11,10 +10,8 @@ on:
       - "typst.toml"
       - "tests/visual/**"
   workflow_dispatch:
-
 permissions:
   contents: read
-
 jobs:
   prepare-fonts:
     name: Prepare Typst fonts
@@ -30,7 +27,6 @@ jobs:
           path: fonts
           if-no-files-found: error
           retention-days: 1
-
   layout-parity:
     name: ${{ matrix.degree }}-${{ matrix.language }}-${{ matrix.output }}
     needs: prepare-fonts
@@ -79,7 +75,6 @@ jobs:
           path: build/artifacts
           if-no-files-found: error
           retention-days: 1
-
   merge-comparisons:
     name: Merge comparison bundles
     needs: layout-parity
