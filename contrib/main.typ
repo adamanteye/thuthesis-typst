@@ -1,6 +1,6 @@
 #!/usr/bin/env -S typst c
 // #import "@preview/tntt:0.6.0" as tntt
-#import "../../src/lib.typ" as tntt
+#import "../src/lib.typ" as tntt
 
 // This reference document uses TnTT's page-level API.
 #let (

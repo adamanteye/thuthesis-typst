@@ -7,9 +7,7 @@ on:
       - "src/**"
       - "template/**"
       - "contrib/**"
-      - "scripts/**"
       - "typst.toml"
-      - ".justfile"
       - ".github/workflows/build.yml"
   pull_request:
     types: [opened, edited, synchronize]
@@ -17,27 +15,24 @@ on:
       - "src/**"
       - "template/**"
       - "contrib/**"
-      - "scripts/**"
       - "typst.toml"
-      - ".justfile"
       - ".github/workflows/build.yml"
   workflow_dispatch:
 jobs:
   render-paper:
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository }}-ci:0.15.1
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v7
-      - name: Setup Typst
-        uses: typst-community/setup-typst@v5
-        with:
-          typst-version: 0.15.1
-      - name: Setup just
-        uses: extractions/setup-just@v4
-      - name: Prepare open fonts
-        run: bash scripts/fonts.sh fonts
       - name: Render templates
-        run: just smoke
+        run: |
+          mkdir -p build/nightly
+          for lang in zh en; do
+            typst compile --root . --input "lang=$lang" template/thesis.typ "build/nightly/thesis-$lang.pdf"
+            typst compile --root . --input "lang=$lang" contrib/main.typ "build/nightly/reference-$lang.pdf"
+          done
       - name: Upload Artifacts
         if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v7

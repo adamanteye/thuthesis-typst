@@ -1,4 +1,4 @@
-#import "../../src/lib.typ" as thu
+#import "../src/lib.typ" as thu
 
 #let degree = sys.inputs.at("degree")
 #let lang = sys.inputs.at("lang")
