@@ -3,16 +3,6 @@
 // #import "@preview/tntt:0.6.0" as tntt
 #import "../src/lib.typ" as tntt
 
-// Replace these open fonts if your institution requires another font set.
-#let font-family = (
-  SongTi: ((name: "TeX Gyre Termes", covers: "latin-in-cjk"), "FandolSong"),
-  HeiTi: ((name: "TeX Gyre Heros", covers: "latin-in-cjk"), "FandolHei"),
-  KaiTi: ((name: "TeX Gyre Termes", covers: "latin-in-cjk"), "FandolKai"),
-  FangSong: ((name: "TeX Gyre Termes", covers: "latin-in-cjk"), "FandolFang R"),
-  Mono: ((name: "TeX Gyre Cursor", covers: "latin-in-cjk"), "FandolFang R"),
-  Math: ("XITS Math", "FandolKai"),
-)
-
 #let (
   ..config,
   meta,
@@ -50,7 +40,12 @@
   ),
   // Keep bibliography files next to the entrypoint or update this path.
   bibliography: read("main.bib"),
-  fonts: font-family,
+  // Presets: "windows", "macos", "fandol", "ubuntu". Override families as needed.
+  fonts: (
+    base: "fandol",
+    KaiTi: ((name: "TeX Gyre Termes", covers: "latin-in-cjk"), "FandolKai"),
+    Math: ("XITS Math", "FandolKai"),
+  ),
 )
 
 // Apply PDF metadata, language, paper size, and global reference behavior.

@@ -28,15 +28,6 @@
   ),
 ).at(lang)
 
-#let font-family = (
-  SongTi: ((name: "TeX Gyre Termes", covers: "latin-in-cjk"), "FandolSong", "FandolKai"),
-  HeiTi: ((name: "TeX Gyre Heros", covers: "latin-in-cjk"), "FandolHei"),
-  KaiTi: ((name: "TeX Gyre Termes", covers: "latin-in-cjk"), "FandolKai"),
-  FangSong: ((name: "TeX Gyre Termes", covers: "latin-in-cjk"), "FandolFang R"),
-  Mono: ((name: "TeX Gyre Cursor", covers: "latin-in-cjk"), "FandolFang R"),
-  Math: ("XITS Math", "FandolKai"),
-)
-
 #let (
   ..config,
   meta,
@@ -54,7 +45,12 @@
   degree: degree,
   degree-type: degree-type,
   twoside: twoside,
-  fonts: font-family,
+  fonts: (
+    base: "fandol",
+    SongTi: ((name: "TeX Gyre Termes", covers: "latin-in-cjk"), "FandolSong", "FandolKai"),
+    KaiTi: ((name: "TeX Gyre Termes", covers: "latin-in-cjk"), "FandolKai"),
+    Math: ("XITS Math", "FandolKai"),
+  ),
   info: (
     title: text.title,
     author: "测试作者",

@@ -58,6 +58,8 @@ typst init @preview/tntt
 
 ### 字体配置
 
+`define-config` 的 `fonts` 可直接使用 `"windows"`、`"macos"`、`"fandol"` 或 `"ubuntu"` 预设；也可传入含 `base` 的字典，覆盖指定字族。仓库开发可运行 `bash scripts/fonts.sh fonts` 安装开源字体，再用 `just smoke` 编译现有矩阵；`just parity` 的用法见[视觉夹具说明](tests/visual/README.md)。
+
 本模板主要面向中文排版，并依照论文字体规范设置了相应的中文字族信息，即：
 
 - SongTi: 宋体，正文字体，通常对应西文中的衬线字体
@@ -182,6 +184,8 @@ If you are not familiar with [Typst Syntax][Typst Docs], you can refer to [Chine
 Before you begin editing, if you have no idea about Typst font configuration, please read the following font configuration notes first:
 
 ### Font Configuration
+
+The `fonts` option in `define-config` accepts `"windows"`, `"macos"`, `"fandol"`, or `"ubuntu"`, or a dictionary with `base` and family overrides. For repository development, run `bash scripts/fonts.sh fonts`, then `just smoke`. See the [visual fixtures](tests/visual/README.md) for `just parity` usage.
 
 This template is designed primarily for Chinese typesetting and includes corresponding Chinese font families according to thesis typography standards:
 
