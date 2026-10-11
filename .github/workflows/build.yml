@@ -9,6 +9,7 @@ on:
       - "contrib/**"
       - "scripts/**"
       - "typst.toml"
+      - ".justfile"
       - ".github/workflows/build.yml"
   pull_request:
     types: [opened, edited, synchronize]
@@ -18,6 +19,7 @@ on:
       - "contrib/**"
       - "scripts/**"
       - "typst.toml"
+      - ".justfile"
       - ".github/workflows/build.yml"
   workflow_dispatch:
 jobs:
@@ -30,10 +32,12 @@ jobs:
         uses: typst-community/setup-typst@v5
         with:
           typst-version: 0.15.1
+      - name: Setup just
+        uses: extractions/setup-just@v4
       - name: Prepare open fonts
         run: bash scripts/fonts.sh fonts
       - name: Render templates
-        run: bash scripts/build.sh
+        run: just smoke
       - name: Upload Artifacts
         if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v7
