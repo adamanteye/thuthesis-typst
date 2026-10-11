@@ -4,3 +4,11 @@
 .zed/
 *.pdf
 record*.json
+build/
+/latex-reference/
+__pycache__/
+
+!/assets/thu-fig-logo.pdf
+!/assets/thu-text-logo.pdf
+!/template/fig/example-image-a.pdf
+!/template/fig/example-image-b.pdf

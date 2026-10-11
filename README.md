@@ -29,7 +29,7 @@ typst init @preview/tntt
 当然，您也可以在任意 typst 文件中添加如下内容来导入此模板。
 
 ```typ
-#import "@preview/tntt:0.5.4"
+#import "@preview/tntt:0.6.0"
 #import tntt: define-config
 ```
 
@@ -38,15 +38,6 @@ typst init @preview/tntt
 > [!WARNING]
 >
 > 夜间版本并不稳定，建议仅在想要添加功能或修复问题的情况下使用。
-
-如果需要使用此模板进行二次开发，本模板也提供了一些易用的接口：
-
-```typ
-#import tntt.exports: *
-#import tntt: multi-numbering
-```
-
-其中 `exports` 模块导出了除封面外的所有布局和页面组件，而功能性函数则直接导出，您可以在此基础上进行修改和扩展，如实现个性化的 `define-config` 来声明模板配置，案例可参考 [simple-handout-template][simple-handout-template]。
 
 ## 导引
 
@@ -62,17 +53,22 @@ typst init @preview/tntt
 - HeiTi: 黑体，标题字体，通常对应西文中的无衬线字体
 - KaiTi: 楷体，适用于说明性文本和主观性表述
 - FangSong: 仿宋，通常用于注释、引文及权威性阐述
-- Mono: 等宽字体，默认 `TeX Gyre Cursor`、`FandolHei`
-- Math: 数学字体，默认 `XITS Math`、`FandolKai`
+- Mono: 等宽字体，默认 `TeX Gyre Cursor`、`FandolFang R`
+- Math: 数学字体，默认 `XITS Math`
 
 其中 SongTi、KaiTi 和 FangSong 三个字族的默认西文字体为 `TeX Gyre Termes`，HeiTi 字族的默认西文字体为 `TeX Gyre Heros`。对于 Windows 10/11 用户或安装了相应字体的 Linux 用户，中文字体配置可使用 `NSimSun`、`SimHei`、`KaiTi`、`FangSong`，这与 Word 论文模板中的字体配置完全相同；对于 MacOS 用户，除了安装上述字体外，建议配置为 `Songti SC`、`Heiti SC`、`Kaiti SC`、`Fangsong SC`。您也可以用 `Source Han Serif`、`Source Han Sans` 等来替代宋体和黑体。**请注意，由于 Typst 目前对可变字体支持有限，不建议使用可变字体（部分平台 Noto 系列字体可能以可变字体形式分发，请自行留意）**。
+
+`define-config` 的 `fonts` 默认使用 `"fandol"` 开源字体预设，也可直接选择 `"windows"`、`"mac"` 或 `"ubuntu"`，或传入包含上述六个字族的自定义字典。
 
 使用 Nix 构建仓库示例：
 
 ```sh
 nix develop
 just build
+just build english
 ```
+
+不使用 Nix 时，也可运行 `make -C template fonts` 下载开源字体，编译时附加 `--font-path template/fonts`。
 
 对于使用 VSCode + Tinymist 的用户（其他编辑器及更多设置请参考 [Tinymist 文档][Tinymist Docs]）：
 
@@ -145,24 +141,17 @@ typst init @preview/tntt
 Of course, you can also import the template in any Typst file by adding:
 
 ```typ
-#import "@preview/tntt:0.5.4"
+#import "@preview/tntt:0.6.0"
 #import tntt: define-config
 ```
+
+`define-config` aligns with the [ThuThesis][ThuThesis] (XeLaTeX) layout and supports English theses (`language: "english"`), professional degrees (`degree-type: "professional"`), proposals (`thesis-type: "proposal"`), and the Schwarzman style (`style-override: "schwarzman"`). For per-entry bilingual bibliography terms via `language` / `langid` (or GB/T 7714-2025), import `thuthesis-bib` and pass `bibliography: thuthesis-bib(read("main.bib"))` (with optional `style: "2025"`) to `define-config`.
 
 In addition, due to frequency updates, you can clone the source repository to use the latest nightly version, and then modify `template/thesis.typ` to edit your thesis.
 
 > [!WARNING]
 >
 > The nightly version is unstable and is recommended if you want to add a feature or resolve an issue.
-
-If you need to use this template for secondary development, this template also provides some easy-to-use interfaces:
-
-```typ
-#import tntt.exports: *
-#import tntt: multi-numbering
-```
-
-The `exports` module exports all layout and page components except the cover, and functional functions are directly exported. You can modify and extend them on this basis, such as implementing a personalized `define-config` to declare template configurations. Refer to [simple-handout-template][simple-handout-template] for an example.
 
 ## Instructions
 
@@ -178,17 +167,22 @@ This template is designed primarily for Chinese typesetting and includes corresp
 - **HeiTi**: Sans-serif typeface, used for headings.
 - **KaiTi**: Standard Chinese typeface, suitable for explanatory text and subjective expressions.
 - **FangSong**: Standard Chinese typeface, typically used for annotations, citations, and authoritative explanations.
-- **Mono**: Monospace fonts: `TeX Gyre Cursor`, `FandolHei`.
-- **Math**: Math fonts: `XITS Math`, `FandolKai`.
+- **Mono**: Monospace fonts: `TeX Gyre Cursor`, `FandolFang R`.
+- **Math**: Math font: `XITS Math`.
 
 The default Western font for SongTi, KaiTi, and FangSong is `TeX Gyre Termes`, and the default Western font for HeiTi is `TeX Gyre Heros`. For Windows 10/11 users or Linux users with corresponding fonts installed, you can use the Chinese font configuration `NSimSun`, `SimHei`, `KaiTi`, and `FangSong`, which matched the Word thesis template exactly. For MacOS users, besides installing the above fonts, the recommended configuration is `Songti SC`, `Heiti SC`, `Kaiti SC`, and `Fangsong SC`. You may also replace `SongTi` and `HeiTi` with fonts such as `Source Han Serif` or `Source Han Sans`. **Please note that currently Typst has limited support variable fonts, it's recommended not to use variable fonts (Some platforms may distribute the Noto font series in variable font format, please pay attention to this yourself)**.
+
+`fonts` in `define-config` defaults to the `"fandol"` preset and also accepts `"windows"`, `"mac"`, `"ubuntu"`, or a custom dictionary with the six font families above.
 
 Build the repository examples with Nix:
 
 ```sh
 nix develop
 just build
+just build english
 ```
+
+Without Nix, you can run `make -C template fonts` to download the open-source fonts and compile with `--font-path template/fonts`.
 
 For users of VSCode with Tinymist (other editors and more options are documented in the [Tinymist Documentation][Tinymist Docs]):
 
@@ -237,10 +231,9 @@ The template source code is distributed under the [MIT][LICENSE] license. You ar
 <!-- Markdown Links -->
 
 [Typst]: https://typst.app
-[Quick Start]: https://typst.app/app?template=tntt&version=0.5.4
+[Quick Start]: https://typst.app/app?template=tntt&version=0.6.0
 [Typst Docs]: https://typst.app/docs
 [Typst CN]: https://typst.dev
-[simple-handout-template]: https://github.com/chillcicada/simple-handout-template
 [Tinymist]: https://github.com/Myriad-Dreamin/tinymist
 [Tinymist Docs]: https://myriad-dreamin.github.io/tinymist/
 [OrangeX4]: https://github.com/OrangeX4

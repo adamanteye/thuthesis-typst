@@ -1,0 +1,77 @@
+name: Tests
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tests:
+    name: ${{ matrix.degree }}-${{ matrix.language }}-${{ matrix.output }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        degree: [bachelor, master, doctor, postdoc]
+        language: [chinese, english]
+        output: [electronic, print]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 2
+      - name: Install Nix
+        uses: cachix/install-nix-action@fd24c48048070c1be9acd18c9d369a83f0fe94d7 # v31.8.1
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check out the PR head's first parent
+        if: github.event_name == 'pull_request'
+        run: git worktree add --detach "$RUNNER_TEMP/layout-parent" HEAD^1
+      - name: Check out the XeLaTeX reference
+        if: github.event_name != 'pull_request'
+        uses: actions/checkout@v7
+        with:
+          repository: tuna/thuthesis
+          ref: b50ce596c248964fe04f317a8fe9b1a0f6b34174
+          path: latex-reference
+      - name: Compare the PR commit with its parent
+        if: github.event_name == 'pull_request'
+        run: >-
+          nix develop --no-update-lock-file --command bash tests/parity.sh --previous "${{ matrix.degree }}" "${{ matrix.language }}" "${{ matrix.output }}" "$RUNNER_TEMP/layout-parent"
+      - name: Compare Typst with XeLaTeX
+        if: github.event_name != 'pull_request'
+        run: >-
+          nix develop --no-update-lock-file --command bash tests/parity.sh "${{ matrix.degree }}" "${{ matrix.language }}" "${{ matrix.output }}"
+      - name: Upload case bundle
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: tests-case-${{ matrix.degree }}-${{ matrix.language }}-${{ matrix.output }}
+          path: build/artifacts/**/*.pdf
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+  merge-comparisons:
+    name: Merge comparison bundles
+    needs: tests
+    if: ${{ always() && needs.tests.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merge case artifacts
+        id: merge
+        uses: actions/upload-artifact/merge@v7
+        with:
+          name: tests-review
+          pattern: tests-case-*
+          delete-merged: true
+          retention-days: 7
+          compression-level: 0
+      - name: Link layout comparisons
+        env:
+          GITHUB_ARTIFACT_URL: ${{ steps.merge.outputs.artifact-url }}
+        run: |
+          echo "[Download the layout overlays and original PDFs]($GITHUB_ARTIFACT_URL)" >> "$GITHUB_STEP_SUMMARY"

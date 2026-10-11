@@ -1,82 +1,139 @@
-//! Text processing utilities
+// Text measurement and distribution primitives.
 
-/// Extract text from content or return string as is.
-///
-/// - body (content, str): the text content to extract
-/// -> str
-#let _select-text(body) = if type(body) == content { body.text } else {
-  assert(type(body) == str, message: "Expected content or string, got " + str(type(body)))
+// Typst's point is 1/72 inch and is physically equal to TeX's bp. Values
+// written as TeX pt in thuthesis.dtx must use tex-pt instead.
+#let bp(value) = value * 1pt
+#let tex-pt(value) = value * 1in / 72.27
+
+#let plain-text(value, default: none) = if type(value) == str {
+  value
+} else if type(value) == content {
+  value.fields().at("text", default: default)
+} else {
+  default
+}
+
+#let line-height(size, baseline, body, paragraph-spacing: none) = {
+  set text(size: size, top-edge: 0.8em, bottom-edge: -0.2em)
+  set par(
+    leading: baseline - size,
+    spacing: if paragraph-spacing == none { baseline - size } else {
+      paragraph-spacing
+    },
+  )
   body
 }
 
-/// Replace all characters in a string with a mask character.
-///
-/// - text (str): the text to be masked
-/// - mask (str): the character to use as a mask
-/// -> str
-#let _mask-text(text, mask) = mask * text.clusters().len()
+#let baseline-gap(
+  skip,
+  from-size,
+  to-size,
+  baseline,
+  top-edge: 0.8,
+  bottom-edge: 0.2,
+) = baseline + skip - bottom-edge * from-size - top-edge * to-size
 
-/// Replace all characters in a string with a mask character.
-///
-/// - body (content, str): the text to be masked
-/// - mask (str): the character to use as a mask
-/// -> str
-#let mask-text(body, mask: "█") = _mask-text(_select-text(body), mask)
+// Measure the maximum ink above the baseline in the component's real text.
+// Suppressing explicit line breaks prevents their interline space from
+// becoming part of this glyph metric.
+#let content-ink-ascent(body) = {
+  measure({
+    show linebreak: it => none
+    set text(top-edge: "bounds", bottom-edge: "baseline")
+    body
+  }).height
+}
 
-/// Space out characters in a string with a specified spacing.
-///
-/// - text (str): the text to space out
-/// - space (str): the space to use between characters
-/// -> str
-#let _space-text(text, space) = text.split("").join(space).trim()
+// TeX appends every line box to a vertical list with the same rule. It
+// normally preserves `baseline`, but switches to `lineskip` when the
+// natural depth and height of two adjacent boxes leave less than
+// `lineskip-limit`. Convert that baseline-oriented result to the edge gap
+// required by Typst's block flow. The natural and frame edges differ when
+// a Typst line uses an explicit 0.8em/0.2em frame around real glyph bounds.
+#let tex-vlist-boundary(
+  baseline,
+  previous-depth,
+  next-height,
+  skip: 0pt,
+  previous-frame-depth: auto,
+  next-frame-height: auto,
+  lineskip: tex-pt(1),
+  lineskip-limit: 0pt,
+  mode: "auto",
+) = {
+  assert(mode in ("auto", "lineskip"))
+  let previous-frame-depth = if previous-frame-depth == auto {
+    previous-depth
+  } else { previous-frame-depth }
+  let next-frame-height = if next-frame-height == auto {
+    next-height
+  } else { next-frame-height }
+  let normal = baseline - previous-depth - next-height
+  let uses-lineskip = mode == "lineskip" or normal < lineskip-limit
+  let interline = if uses-lineskip { lineskip } else { normal }
+  (
+    spacing: (
+      skip
+        + previous-depth
+        + interline
+        + next-height
+        - previous-frame-depth
+        - next-frame-height
+    ),
+    uses-lineskip: uses-lineskip,
+  )
+}
 
-/// Space out characters in a string with a specified spacing.
-///
-/// - body (content, str): the text to space out
-/// - space (str): the space to use between characters
-/// -> str
-#let space-text(body, space: " ") = _space-text(_select-text(body), space)
+#let _characters(value) = if type(value) == str {
+  value.clusters()
+} else {
+  assert(
+    type(value) == array,
+    message: "thuthesis: distributed text must be a string or an explicit character array",
+  )
+  for item in value {
+    assert(
+      type(item) in (str, content),
+      message: "thuthesis: explicit character data must contain strings or content",
+    )
+  }
+  value
+}
 
-/// Create a text block with distributed text.
-///
-/// - text (str): the text to distribute
-/// - width (length): the width of the block, defaults to auto
-/// -> content
-#let _distr-text(text, width) = block(width: width, stack(dir: ltr, ..text.clusters().intersperse(1fr)))
+#let distribute(width, value, shrink: false) = context {
+  let characters = _characters(value)
+  let body = characters.join()
+  let resolved-width = measure(box(width: width)).width
+  if characters.len() <= 1 {
+    box(width: width, align(center, body))
+  } else {
+    let natural = measure(body).width
+    let gap = (resolved-width - natural) / (characters.len() - 1)
+    let gap = if shrink { gap } else { calc.max(0pt, gap) }
+    box(width: width, {
+      set par(first-line-indent: 0pt)
+      for (index, character) in characters.enumerate() {
+        character
+        if index < characters.len() - 1 { h(gap) }
+      }
+    })
+  }
+}
 
-/// Create a text block with distributed text.
-///
-/// - body (content, str): the text to distribute
-/// - width (length): the width of the block, defaults to auto
-/// -> content
-#let distr-text(body, width) = _distr-text(_select-text(body), width)
+#let stretch(width, value) = context {
+  let characters = _characters(value)
+  let body = characters.join()
+  let resolved-width = measure(box(width: width)).width
+  if measure(body).width < resolved-width {
+    distribute(width, characters)
+  } else {
+    body
+  }
+}
 
-/// Create a vertical stack of text clusters, for CJK characters only.
-///
-/// - text (str): the text to stack
-/// - spacing (length): the spacing between lines
-/// -> content
-#let _v-text(text, spacing) = stack(dir: ttb, ..text.clusters(), spacing: spacing)
-
-/// Create a vertical stack of text clusters, for CJK characters only.
-///
-/// - body (content, str): the text to stack
-/// - spacing (length): the spacing between lines
-/// -> content
-#let v-text(body, spacing: 3.6pt) = _v-text(_select-text(body), spacing)
-
-/// Create a text block with fixed-width text by adjusting tracking,
-/// only supports single-line text and width relative to font size.
-///
-/// - text (str): the text to adjust
-/// - width (length): the target width
-/// -> content
-#let _fixed-text(str, width) = text(tracking: (width - str.clusters().len() * 1em) / (str.clusters().len() - 1), str)
-
-/// Create a text block with fixed-width text by adjusting tracking,
-/// only supports single-line text and width relative to font size.
-///
-/// - body (content, str): the text to adjust
-/// - width (length): the target width
-/// -> content
-#let fixed-text(body, width) = _fixed-text(_select-text(body), width)
+// Simple markup text can safely become character data. Richly styled content
+// remains intact and is not silently flattened.
+#let stretch-text(width, value) = {
+  let source = plain-text(value)
+  if source == none { value } else { stretch(width, source) }
+}

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<style xmlns="http://purl.org/net/xbiblio/csl" version="1.0" class="in-text">
+  <info>
+    <title>ThuThesis appendix citation</title>
+    <id>https://github.com/tuna/thuthesis/appendix-citation</id>
+    <updated>2026-08-13T00:00:00Z</updated>
+  </info>
+  <citation collapse="citation-number" after-collapse-delimiter=",">
+    <sort>
+      <key variable="citation-number"/>
+    </sort>
+    <layout vertical-align="sup" delimiter="," prefix="[" suffix="]">
+      <text variable="citation-number" prefix="THUTHESIS_APPENDIX."/>
+    </layout>
+  </citation>
+</style>

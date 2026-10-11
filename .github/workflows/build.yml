@@ -1,5 +1,4 @@
 name: Render nightly thesis
-
 on:
   push:
     branches:
@@ -7,56 +6,56 @@ on:
     paths:
       - "src/**"
       - "template/**"
+      - "assets/**"
+      - "typst.toml"
+      - ".github/workflows/build.yml"
   pull_request:
     types: [opened, edited, synchronize]
     paths:
       - "src/**"
       - "template/**"
+      - "assets/**"
+      - "typst.toml"
+      - ".github/workflows/build.yml"
   workflow_dispatch:
-
 jobs:
   render-paper:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v7
-
       - name: Setup Typst
         uses: typst-community/setup-typst@v5
         with:
-          typst-version: latest
-
-      - name: Install Fonts
+          typst-version: 0.15.1
+      - name: Install open fonts
+        shell: bash
         run: |
-          curl --proto '=https' --tlsv1.2 -sSLf https://github.com/tuna/thuthesis-typst/releases/latest/download/fonts.zip -o fonts.zip
-          unzip -q fonts.zip && rm fonts.zip
-
-      - name: Render Bachelor Thesis
+          mkdir -p "$GITHUB_WORKSPACE/fonts"
+          archive_dir=$(mktemp -d)
+          trap 'rm -rf "$archive_dir"' EXIT
+          while read -r digest archive; do
+            curl --proto '=https' --tlsv1.2 -fLsS --retry 3 \
+              "https://mirrors.ctan.org/fonts/$archive" -o "$archive_dir/$archive"
+            (cd "$archive_dir" && printf '%s  %s\n' "$digest" "$archive" | sha256sum --check -)
+            unzip -qo "$archive_dir/$archive" -d "$GITHUB_WORKSPACE/fonts"
+          done <<'FONTS'
+          9278f01b417ded5766d98c3937192a1a6a2c73a5e94a3493fdfc932b2a55005a  fandol.zip
+          9f7d6711ba0892936a78399777e8656b03ef6001ab0d8493758e4727bebdd4cd  xits.zip
+          1773c470f9e388e087b68e3426e115af2cd236845a7e05ceb25b2a503409a7a3  tex-gyre.zip
+          FONTS
+          echo "TYPST_FONT_PATHS=$GITHUB_WORKSPACE/fonts" >> "$GITHUB_ENV"
+          echo "TYPST_IGNORE_SYSTEM_FONTS=true" >> "$GITHUB_ENV"
+      - name: Render templates
         run: |
-          ./template/thesis.typ --root .. --font-path fonts bachelor-academic.pdf
-          ./template/thesis.typ --root .. --font-path fonts bachelor-academic-anonymous.pdf --input anonymous=true
-          ./template/thesis.typ --root .. --font-path fonts bachelor-academic-twoside.pdf --input twoside=true
-          ./template/thesis.typ --root .. --font-path fonts bachelor-academic-anonymous-twoside.pdf --input anonymous=true --input twoside=true
-
-      - name: Render Master Thesis
-        run: |
-          ./template/thesis.typ --root .. --font-path fonts master-academic.pdf --input degree=master
-          ./template/thesis.typ --root .. --font-path fonts master-academic-anonymous.pdf --input degree=master --input anonymous=true
-          ./template/thesis.typ --root .. --font-path fonts master-academic-twoside.pdf --input degree=master --input twoside=true
-          ./template/thesis.typ --root .. --font-path fonts master-academic-anonymous-twoside.pdf --input degree=master --input anonymous=true --input twoside=true
-
+          mkdir -p build/nightly
+          for language in chinese english; do
+            typst compile --root . --input "language=$language" template/thesis.typ "build/nightly/thesis-$language.pdf"
+          done
       - name: Upload Artifacts
         if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v7
         with:
           name: thesis
-          path: |
-            bachelor-academic.pdf
-            bachelor-academic-anonymous.pdf
-            bachelor-academic-twoside.pdf
-            bachelor-academic-anonymous-twoside.pdf
-
-            master-academic.pdf
-            master-academic-anonymous.pdf
-            master-academic-twoside.pdf
-            master-academic-anonymous-twoside.pdf
+          path: build/nightly/*.pdf
+          if-no-files-found: error

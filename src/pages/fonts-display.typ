@@ -1,59 +1,33 @@
-/// Fonts Display Page
-///
-/// - fonts (dictionary): The dictionary of fonts to be displayed.
-/// - size (length, str): The size of the font to be used for display.
-/// - cjk-text (text): The CJK text to be displayed.
-/// - latin-text (text): The Latin text to be displayed.
-/// -> content
-#let fonts-display(
-  // from entry
-  fonts: (:),
-  // options
-  size: "小四",
-  cjk-text: "落霞与孤鹜齐飞，秋水共长天一色。",
-  latin-text: "The fanfare of birds announces the morning.",
-) = {
-  import "../utils/font.typ": use-size
+#import "common.typ": _inside
+#import "../utils/text.typ": bp
 
-  let font-list = (("宋体", "SongTi"), ("黑体", "HeiTi"), ("楷体", "KaiTi"), ("仿宋", "FangSong"), ("等宽", "Mono"))
-
-  let display-font(cjk-name, latin-name) = {
+/// Render a compact font diagnostic page using the active font profile.
+#let _render-fonts-display(fonts, size: 12pt) = {
+  set page(margin: auto)
+  set text(size: size)
+  text(fill: red)[
+    _Check the rendered CJK and Latin text below before submitting a thesis._
+  ]
+  for (label, role) in (
+    ([正文 / Serif], "serif"),
+    ([标题 / Sans], "sans"),
+    ([楷体 / Kaiti], "kaiti"),
+    ([仿宋 / FangSong], "fangsong"),
+    ([等宽 / Mono], "mono"),
+  ) {
     line(length: 100%, stroke: .3pt)
+    text(font: fonts.at(role))[
+      *#label*
 
-    text(size: use-size(size), font: fonts.at(latin-name))[
-      #cjk-name (#latin-name CJK Regular)：#cjk-text
+      落霞与孤鹜齐飞，秋水共长天一色。
 
-      #cjk-name (#latin-name Latin Regular): #latin-text
-
-      *#cjk-name (#latin-name CJK Bold)：#cjk-text*
-
-      *#cjk-name (#latin-name Latin Bold): #latin-text*
+      The fanfare of birds announces the morning.
     ]
   }
-
-  /// Render the page
-  set page(margin: auto)
-
-  // use the built-in font Libertinus Serif to display the message
-  text(red)[
-    _Hint: If you cannot render the below text correctly or find any discrepancies with what's expected, you should pay attention to the error message and read the instructions on font configuration._
-  ]
-
-  line(length: 100%)
-
-  text(size: use-size(size), font: fonts.SongTi)[
-    *Fonts Display Page | Adjust the font configuration to render correctly in the PDF*
-
-    *字体展示页 | 请调整字体配置至正确在 PDF 中渲染*
-  ]
-
-  for it in font-list { display-font(..it) }
-
-  line(length: 100%)
-
-  text(green)[_Now you can remove the *`fonts-display`* page from the document._]
-
-  align(right)[*Typst v#sys.version* & *TnTT v#toml("../../typst.toml").package.version*]
-
-  pagebreak(to: "odd") // Always page break to odd page
+  pagebreak(to: "odd")
 }
+
+#let _fonts-display(env, size: bp(12)) = _inside(
+  env,
+  config => _render-fonts-display(config.font-profile, size: size),
+)

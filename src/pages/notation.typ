@@ -1,49 +1,51 @@
-/// Notation Page
-///
-/// - twoside (bool, str): Whether to use two-sided layout.
-/// - outlined (bool): Whether to outline the page.
-/// - bookmarked (bool): Whether to add a bookmark for the page.
-/// - title (content): The title of the notation page.
-/// - width (length, relative): The width of the notation grid.
-/// - columns (array): The widths of the grid columns for terms and descriptions.
-/// - row-gutter (length): The vertical space between rows.
-/// - chunked (bool): Whether to chunk the content by parbreaks.
-/// - blank-row-gutter (length, none): The vertical space for blank rows, defaults to `row-gutter * 2` if not specified.
-/// - it (content): The content of the notation page.
-/// -> content
-#let notation(
-  // from entry
-  twoside: false,
-  // options
-  title: [符号和缩略语说明],
-  outlined: false,
-  bookmarked: true,
-  width: 100%,
-  columns: (96pt, 1fr),
-  row-gutter: 12pt,
-  chunked: false,
-  blank-row-gutter: none,
-  // self
-  it,
-) = {
-  assert(type(row-gutter) == length, message: "row-gutter must be a length value here.")
+#import "../config.typ": chapter-names
+#import "common.typ": _front-title-outlined, _inside, _special-chapter
+#import "../utils/text.typ": bp
 
-  import "../utils/util.typ": twoside-pagebreak
-
-  let blank-row-gutter = if blank-row-gutter == none { 1.5 * row-gutter } else { blank-row-gutter }
-
-  let blank-row-inset = if chunked { (blank-row-gutter - 2 * row-gutter) / 2 } else { -row-gutter / 2 }
-
-  let select-term = it => if (it.func() == terms.item) { (it.term, it.description) } else {
-    grid.cell(none, colspan: 2, inset: (y: blank-row-inset)) // it.func() == parbreak
-  }
-
-  twoside-pagebreak(twoside)
-
-  heading(level: 1, numbering: none, outlined: outlined, bookmarked: bookmarked, title)
-
-  align(center, block(width: width, align(start, grid(
-    columns: columns, row-gutter: row-gutter,
-    ..it.children.filter(it => it.func() == parbreak or it.func() == terms.item).map(select-term).flatten()
-  ))))
-}
+#let _denotation(
+  env,
+  entries,
+  label-width: 2.5cm,
+  title: auto,
+  header: auto,
+) = _inside(
+  env,
+  config => {
+    assert(
+      type(entries) == array,
+      message: "thuthesis: denotation entries must be an array",
+    )
+    assert(
+      type(label-width) == length and label-width > 0pt,
+      message: "thuthesis: denotation label-width must be a positive length",
+    )
+    let names = chapter-names(config)
+    _special-chapter(
+      env,
+      if title == auto { names.denotation } else { title },
+      outlined: _front-title-outlined(config, "list"),
+      header: header,
+    )
+    for entry in entries {
+      assert(
+        type(entry) == array and entry.len() == 2,
+        message: "thuthesis: each denotation entry must be `(symbol, description)`",
+      )
+    }
+    // TeX's global `\sloppy` and xeCJK punctuation handling let dense rows
+    // trade inter-word space and hang closing punctuation before breaking.
+    set par(linebreaks: "optimized")
+    let cell = body => pad(bottom: bp(8), body)
+    grid(
+      columns: (label-width, 1fr),
+      column-gutter: 0.5cm,
+      row-gutter: 0pt,
+      ..entries
+        .map(entry => (
+          cell(entry.at(0)),
+          cell(entry.at(1)),
+        ))
+        .flatten(),
+    )
+  },
+)

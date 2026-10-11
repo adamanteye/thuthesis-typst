@@ -56,6 +56,7 @@
               typst
               just
               typstyle
+              (python3.withPackages (ps: [ ps.pillow ps.pymupdf ]))
             ];
             TYPST_FONT_PATHS = tex.fonts;
             TYPST_IGNORE_SYSTEM_FONTS = "true";

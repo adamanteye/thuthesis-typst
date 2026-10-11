@@ -7,17 +7,17 @@ export TYPST_ROOT := root
 default:
   @just --list --unsorted
 
-# update thumbnail
-thumbnail:
-  @typst c -f png --pages 3 template/thesis.typ thumbnail.png
+# build pdf (optionally `just build english`)
+build language="chinese":
+  @typst c --root . --input language={{language}} template/thesis.typ
 
-# build pdf
-build:
-  @typst c template/thesis.typ
+# render the Chinese undergraduate cover for the package preview
+thumbnail:
+  @typst c -f png --pages 1 --root . --input degree=bachelor --input language=chinese template/thesis.typ thumbnail.png
 
 # export profile
 profile:
-  @typst c template/thesis.typ --timings record.json
+  @typst c --root . template/thesis.typ --timings record.json
 
 # format typst files
 format:
