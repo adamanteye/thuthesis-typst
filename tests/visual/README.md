@@ -1,19 +1,21 @@
 # Visual fixtures
 
 `main.tex` and `main-en.tex` mirror the complete document in
-`contrib/latex-parity/main.typ`. The workflow compiles them against the pinned
-ThuThesis revision to review whole-document layout.
+`contrib/latex-parity/main.typ`. With XeLaTeX and BibTeX installed, compile
+against the same ThuThesis revision as CI:
 
-`cases.tex` and `cases.typ` are focused fixtures for local investigation. Both
-accept the same degree, language, and output settings and contain matching body,
-figure, table, equation, and appendix content. They use the workflow's existing
-configuration mapping. The workflow places the complete and focused comparisons
-under separate directories in the same case bundle.
+```sh
+git clone https://github.com/tuna/thuthesis.git latex-reference
+git -C latex-reference checkout b50ce596c248964fe04f317a8fe9b1a0f6b34174
+bash scripts/fonts.sh fonts
+just parity bachelor chinese electronic   # ref defaults to latex-reference/
+```
 
-Each comparison directory contains the original LaTeX and Typst PDFs, a
-three-column review PDF, a full-size overlay, a JSON report, and a short README.
-The case directory also retains LaTeX, BibTeX, and Typst logs. Page-count
-differences remain visible as blank panels and are recorded in the JSON report.
+`cases.tex` and `cases.typ` focus on body text, headers, numbering, figures,
+tables, equations, and appendices. Each case produces only original PDFs:
+`build/artifacts/<degree>-<language>-<output>/{full,focused}/{latex,typst}.pdf`.
+CI combines all 16 cases into the `layout-parity-review` download. Compiler
+output stays in Actions; local LaTeX logs are under `build/visual-work/`.
 
 The configuration mapping is explicit:
 
