@@ -3,7 +3,6 @@
 #import "../src/lib.typ" as tntt
 #import tntt: define-config, use-size
 
-/// 以下字体配置使用 TeX Live 提供的开源字体，可在 `nix develop` 中直接编译。
 /// 请勿修改 font-family 中定义的键值，除 Math 数学字体外，修改西文字体时请使用 `latin-in-cjk` 覆盖字体范围
 ///
 /// 对于 MacOS 用户，可以使用 `Songti SC`、`Heiti SC`、`Kaiti SC`、`Fangsong SC` 和 `Menlo` 作为替代

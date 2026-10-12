@@ -2,8 +2,7 @@
   description = "TnTT development and CI toolchain";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-  # Upstream nixpkgs still ships TeX Live 2025. This maintainer branch
-  # provides TeX Live 2026; flake.lock pins its 2026-07-27 snapshot.
+  # Upstream nixpkgs does not yet provide TeX Live 2026.
   inputs.texlive-nixpkgs.url = "github:chrjabs/nixpkgs/texlive-2026";
 
   outputs =

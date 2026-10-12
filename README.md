@@ -62,12 +62,12 @@ typst init @preview/tntt
 - HeiTi: 黑体，标题字体，通常对应西文中的无衬线字体
 - KaiTi: 楷体，适用于说明性文本和主观性表述
 - FangSong: 仿宋，通常用于注释、引文及权威性阐述
-- Mono: 等宽字体，适用于代码。暂不清楚相关规范，默认西文字体为 `TeX Gyre Cursor`，建议中文字体选用黑体或楷体，或使用常见的中文等宽字体，默认为 `FandolHei`
-- Math: 数学字体。暂不清楚相关规范，默认西文字体为 `XITS Math`，中文字体为 `FandolKai`
+- Mono: 等宽字体，默认 `TeX Gyre Cursor`、`FandolHei`
+- Math: 数学字体，默认 `XITS Math`、`FandolKai`
 
 其中 SongTi、KaiTi 和 FangSong 三个字族的默认西文字体为 `TeX Gyre Termes`，HeiTi 字族的默认西文字体为 `TeX Gyre Heros`。对于 Windows 10/11 用户或安装了相应字体的 Linux 用户，中文字体配置可使用 `NSimSun`、`SimHei`、`KaiTi`、`FangSong`，这与 Word 论文模板中的字体配置完全相同；对于 MacOS 用户，除了安装上述字体外，建议配置为 `Songti SC`、`Heiti SC`、`Kaiti SC`、`Fangsong SC`。您也可以用 `Source Han Serif`、`Source Han Sans` 等来替代宋体和黑体。**请注意，由于 Typst 目前对可变字体支持有限，不建议使用可变字体（部分平台 Noto 系列字体可能以可变字体形式分发，请自行留意）**。
 
-起步模板使用 Fandol、TeX Gyre 和 XITS 开源字体。仓库提供 Nix flake，固定 Typst 0.15.1、TeX Live 2026 和构建工具，并让 Typst 与 XeLaTeX 共用 TeX Live 的字体。本地开发与 CI 使用相同环境：
+使用 Nix 构建仓库示例：
 
 ```sh
 nix develop
@@ -76,15 +76,12 @@ just build
 
 对于使用 VSCode + Tinymist 的用户（其他编辑器及更多设置请参考 [Tinymist 文档][Tinymist Docs]）：
 
-使用 Nix 时，在 `nix develop` 中运行 `echo "$TYPST_FONT_PATHS"`，将下面的字体路径替换为输出的目录。
-
 ```jsonc
 // .vscode/settings.json
 {
   "tinymist.fontPaths": [
     "${workspaceFolder}/fonts"
-  ],
-  "tinymist.systemFonts": false
+  ]
 }
 ```
 
@@ -181,12 +178,12 @@ This template is designed primarily for Chinese typesetting and includes corresp
 - **HeiTi**: Sans-serif typeface, used for headings.
 - **KaiTi**: Standard Chinese typeface, suitable for explanatory text and subjective expressions.
 - **FangSong**: Standard Chinese typeface, typically used for annotations, citations, and authoritative explanations.
-- **Mono**: Monospace typeface, used for code. The relevant specifications are not yet clear. The default Western font is `TeX Gyre Cursor`. For Chinese typeface, Heiti or KaiTi is recommended, or commonly used Chinese monospace font, default to `FandolHei`.
-- **Math**: Math typeface. The relevant specifications are not yet clear. The default Western font is `XITS Math`, with Chinese typeface default to `FandolKai`.
+- **Mono**: Monospace fonts: `TeX Gyre Cursor`, `FandolHei`.
+- **Math**: Math fonts: `XITS Math`, `FandolKai`.
 
 The default Western font for SongTi, KaiTi, and FangSong is `TeX Gyre Termes`, and the default Western font for HeiTi is `TeX Gyre Heros`. For Windows 10/11 users or Linux users with corresponding fonts installed, you can use the Chinese font configuration `NSimSun`, `SimHei`, `KaiTi`, and `FangSong`, which matched the Word thesis template exactly. For MacOS users, besides installing the above fonts, the recommended configuration is `Songti SC`, `Heiti SC`, `Kaiti SC`, and `Fangsong SC`. You may also replace `SongTi` and `HeiTi` with fonts such as `Source Han Serif` or `Source Han Sans`. **Please note that currently Typst has limited support variable fonts, it's recommended not to use variable fonts (Some platforms may distribute the Noto font series in variable font format, please pay attention to this yourself)**.
 
-The starter uses the open Fandol, TeX Gyre, and XITS fonts. The repository's Nix flake pins Typst 0.15.1, TeX Live 2026, and the build tools, and gives Typst and XeLaTeX the same TeX Live fonts. Local development and CI use the same environment:
+Build the repository examples with Nix:
 
 ```sh
 nix develop
@@ -195,15 +192,12 @@ just build
 
 For users of VSCode with Tinymist (other editors and more options are documented in the [Tinymist Documentation][Tinymist Docs]):
 
-With Nix, run `echo "$TYPST_FONT_PATHS"` inside `nix develop` and replace the font path below with the resulting directory.
-
 ```jsonc
 // .vscode/settings.json
 {
   "tinymist.fontPaths": [
     "${workspaceFolder}/fonts"
-  ],
-  "tinymist.systemFonts": false
+  ]
 }
 ```
 
