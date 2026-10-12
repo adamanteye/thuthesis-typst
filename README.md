@@ -74,15 +74,6 @@ nix develop
 just build
 ```
 
-需要在 Nix 中启用 `nix-command` 和 `flakes`。TeX Live 使用维护者 [2026 分支的 flake](https://github.com/chrjabs/nixpkgs/blob/445cccfc5e6a36a0aa49d9bd56e372d361c6c1b0/flake.nix)，锁定 2026-07-27 快照；上游 nixpkgs 目前仍提供 TeX Live 2025。`flake.lock` 固定工具和字体版本，升级时运行 `nix flake update`，由 CI 执行构建。Typst 包仍按需联网下载。
-
-已安装 TeX Live 时，也可直接使用其中的字体编译仓库示例：
-
-```sh
-export TYPST_FONT_PATHS="$(kpsewhich -var-value=TEXMFDIST)/fonts"
-typst compile --root . template/thesis.typ
-```
-
 对于使用 VSCode + Tinymist 的用户（其他编辑器及更多设置请参考 [Tinymist 文档][Tinymist Docs]）：
 
 使用 Nix 时，在 `nix develop` 中运行 `echo "$TYPST_FONT_PATHS"`，将下面的字体路径替换为输出的目录。
@@ -200,15 +191,6 @@ The starter uses the open Fandol, TeX Gyre, and XITS fonts. The repository's Nix
 ```sh
 nix develop
 just build
-```
-
-Enable `nix-command` and `flakes` in Nix. TeX Live uses the maintainer's [2026 branch flake](https://github.com/chrjabs/nixpkgs/blob/445cccfc5e6a36a0aa49d9bd56e372d361c6c1b0/flake.nix), locked to the 2026-07-27 snapshot; upstream nixpkgs still provides TeX Live 2025. `flake.lock` fixes tool and font versions. To upgrade, run `nix flake update`; CI runs the builds. Typst packages are still downloaded on demand.
-
-With TeX Live already installed, you can also use its bundled fonts to compile the repository examples:
-
-```sh
-export TYPST_FONT_PATHS="$(kpsewhich -var-value=TEXMFDIST)/fonts"
-typst compile --root . template/thesis.typ
 ```
 
 For users of VSCode with Tinymist (other editors and more options are documented in the [Tinymist Documentation][Tinymist Docs]):
