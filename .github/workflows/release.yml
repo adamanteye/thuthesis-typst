@@ -15,20 +15,18 @@ env:
 jobs:
   release:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: nix develop --no-update-lock-file --command bash --noprofile --norc -euo pipefail {0}
     if: contains(github.event.ref, 'refs/tags/') && github.event.base_ref == 'refs/heads/main'
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Setup typst
-        uses: typst-community/setup-typst@v5
+      - uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+      - uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
         with:
-          typst-version: latest
-
-      - name: Install Fonts
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSLf https://github.com/tuna/thuthesis-typst/releases/latest/download/fonts.zip -o fonts.zip
-          unzip -q fonts.zip && rm fonts.zip
+          primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock') }}
 
       - name: Determine and check package metadata
         run: |
@@ -46,7 +44,7 @@ jobs:
       - name: Prepare package files
         run: |
           # Update thumbnail
-          typst c -f png --pages 3 --font-path fonts --root . template/thesis.typ thumbnail.png
+          typst c -f png --pages 3 --root . template/thesis.typ thumbnail.png
 
           # Template adjustments
           sed -i '/@preview\/tntt/s|^[[:space:]]*//[[:space:]]*||' template/thesis.typ

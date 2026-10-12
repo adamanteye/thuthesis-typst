@@ -62,34 +62,38 @@ typst init @preview/tntt
 - HeiTi: 黑体，标题字体，通常对应西文中的无衬线字体
 - KaiTi: 楷体，适用于说明性文本和主观性表述
 - FangSong: 仿宋，通常用于注释、引文及权威性阐述
-- Mono: 等宽字体，适用于代码。暂不清楚相关规范，默认西文字体为 Typst 内置的 `DejaVu Sans Mono`，建议中文字体选用黑体或楷体，或使用常见的中文等宽字体，默认为 `SimHei`
-- Math: 数学字体。暂不清楚相关规范，默认西文字体为 Typst 内置的 `New Computer Modern Math`，中文字体为 `KaiTi`
+- Mono: 等宽字体，适用于代码。暂不清楚相关规范，默认西文字体为 `TeX Gyre Cursor`，建议中文字体选用黑体或楷体，或使用常见的中文等宽字体，默认为 `FandolHei`
+- Math: 数学字体。暂不清楚相关规范，默认西文字体为 `XITS Math`，中文字体为 `FandolKai`
 
-其中 Songti、KaiTi 和 FangSong 三个字族的默认西文字体为 `Times New Roman`，HeiTi 字族的默认西文字体为 `Arial`。对于 Windows 10/11 用户或安装了相应字体的 Linux 用户，中文字体配置可使用 `NSimSun`、`SimHei`、`KaiTi`、`FangSong`，这与 Word 论文模板中的字体配置完全相同，也是本模板默认的字体配置；对于 MacOS 用户，除了安装上述字体外，建议配置为 `Songti SC`、`Heiti SC`、`Kaiti SC`、`Fangsong SC`。您也可以用 `Source Han Serif`、`Source Han Sans` 等来替代宋体和黑体。**请注意，由于 Typst 目前对可变字体支持有限，不建议使用可变字体（部分平台 Noto 系列字体可能以可变字体形式分发，请自行留意）**。
+其中 SongTi、KaiTi 和 FangSong 三个字族的默认西文字体为 `TeX Gyre Termes`，HeiTi 字族的默认西文字体为 `TeX Gyre Heros`。对于 Windows 10/11 用户或安装了相应字体的 Linux 用户，中文字体配置可使用 `NSimSun`、`SimHei`、`KaiTi`、`FangSong`，这与 Word 论文模板中的字体配置完全相同；对于 MacOS 用户，除了安装上述字体外，建议配置为 `Songti SC`、`Heiti SC`、`Kaiti SC`、`Fangsong SC`。您也可以用 `Source Han Serif`、`Source Han Sans` 等来替代宋体和黑体。**请注意，由于 Typst 目前对可变字体支持有限，不建议使用可变字体（部分平台 Noto 系列字体可能以可变字体形式分发，请自行留意）**。
 
-本模板已内置适用于 Windows 10/11 系统的字体配置，中文版 Windows 系统通常已预装这些字体。Linux 和 MacOS 用户如需严格使用论文要求的字体，可将本地 Windows 对应字体提取、下载并安装到系统中，或在下载后通过指定字体路径来使用，如：
+起步模板使用 Fandol、TeX Gyre 和 XITS 开源字体。仓库提供 Nix flake，固定 Typst 0.15.1、TeX Live 2026 和构建工具，并让 Typst 与 XeLaTeX 共用 TeX Live 的字体。本地开发与 CI 使用相同环境：
 
 ```sh
-# 将字体压缩包下载至当前目录，并解压到 fonts 文件夹，仅供参考
-curl -sSLf https://github.com/tuna/thuthesis-typst/releases/latest/download/fonts.zip -o fonts.zip
-unzip -q fonts.zip && rm fonts.zip
+nix develop
+just build
+```
 
-# 在 typst 编译时指定字体路径，假设 thesis.typ 为入口文件
-typst compile thesis.typ --font-path fonts
-# 或（适用于克隆源代码仓库的用户）
-typst compile template/thesis.typ --root . --font-path fonts
-# 将 typst 文件视作脚本运行（仅适用于克隆源仓库代码的 UNIX 用户）
-# ./template/thesis.typ --root .. --font-path fonts
+需要在 Nix 中启用 `nix-command` 和 `flakes`。TeX Live 使用维护者 [2026 分支的 flake](https://github.com/chrjabs/nixpkgs/blob/445cccfc5e6a36a0aa49d9bd56e372d361c6c1b0/flake.nix)，锁定 2026-07-27 快照；上游 nixpkgs 目前仍提供 TeX Live 2025。`flake.lock` 固定工具和字体版本，升级时运行 `nix flake update`，由 CI 执行构建。Typst 包仍按需联网下载。
+
+已安装 TeX Live 时，也可直接使用其中的字体编译仓库示例：
+
+```sh
+export TYPST_FONT_PATHS="$(kpsewhich -var-value=TEXMFDIST)/fonts"
+typst compile --root . template/thesis.typ
 ```
 
 对于使用 VSCode + Tinymist 的用户（其他编辑器及更多设置请参考 [Tinymist 文档][Tinymist Docs]）：
+
+使用 Nix 时，在 `nix develop` 中运行 `echo "$TYPST_FONT_PATHS"`，将下面的字体路径替换为输出的目录。
 
 ```jsonc
 // .vscode/settings.json
 {
   "tinymist.fontPaths": [
     "${workspaceFolder}/fonts"
-  ]
+  ],
+  "tinymist.systemFonts": false
 }
 ```
 
@@ -186,34 +190,38 @@ This template is designed primarily for Chinese typesetting and includes corresp
 - **HeiTi**: Sans-serif typeface, used for headings.
 - **KaiTi**: Standard Chinese typeface, suitable for explanatory text and subjective expressions.
 - **FangSong**: Standard Chinese typeface, typically used for annotations, citations, and authoritative explanations.
-- **Mono**: Monospace typeface, used for code. The relevant specifications are not yet clear. The default Western font is Typst's built-in `DejaVu Sans Mono`. For Chinese typeface, Heiti or KaiTi is recommended, or commonly used Chinese monospace font, default to `SimHei`.
-- **Math**: Math typeface. The relevant specifications are not yet clear. The default Western font is Typst's built-in `New Computer Modern Math`, with Chinese typeface default to `KaiTi`.
+- **Mono**: Monospace typeface, used for code. The relevant specifications are not yet clear. The default Western font is `TeX Gyre Cursor`. For Chinese typeface, Heiti or KaiTi is recommended, or commonly used Chinese monospace font, default to `FandolHei`.
+- **Math**: Math typeface. The relevant specifications are not yet clear. The default Western font is `XITS Math`, with Chinese typeface default to `FandolKai`.
 
-The default Western font for the Songti, KaiTi, and FangSong is `Times New Roman`, and the default Western font for the HeiTi is `Arial`. For Windows 10/11 users or Linux users with corresponding fonts installed, you can use the Chinese font configuration `NSimSun`, `SimHei`, `KaiTi`, and `FangSong`, which matched the Word thesis template exactly. For MacOS users, besides installing the above fonts, the recommended configuration is `Songti SC`, `Heiti SC`, `Kaiti SC`, and `Fangsong SC`. You may also replace `SongTi` and `HeiTi` with fonts such as `Source Han Serif` or `Source Han Sans`. **Please note that currently Typst has limited support variable fonts, it's recommended not to use variable fonts (Some platforms may distribute the Noto font series in variable font format, please pay attention to this yourself)**.
+The default Western font for SongTi, KaiTi, and FangSong is `TeX Gyre Termes`, and the default Western font for HeiTi is `TeX Gyre Heros`. For Windows 10/11 users or Linux users with corresponding fonts installed, you can use the Chinese font configuration `NSimSun`, `SimHei`, `KaiTi`, and `FangSong`, which matched the Word thesis template exactly. For MacOS users, besides installing the above fonts, the recommended configuration is `Songti SC`, `Heiti SC`, `Kaiti SC`, and `Fangsong SC`. You may also replace `SongTi` and `HeiTi` with fonts such as `Source Han Serif` or `Source Han Sans`. **Please note that currently Typst has limited support variable fonts, it's recommended not to use variable fonts (Some platforms may distribute the Noto font series in variable font format, please pay attention to this yourself)**.
 
-This template includes built-in font configuration for Windows 10/11 systems, Chinese‑language Windows systems usually come with these fonts preinstalled. Linux and MacOS users who need to strictly adhere the required thesis fonts can extract, download, and install the corresponding local Windows font to the system, or use it after downloading by specifying the font path, for example:
+The starter uses the open Fandol, TeX Gyre, and XITS fonts. The repository's Nix flake pins Typst 0.15.1, TeX Live 2026, and the build tools, and gives Typst and XeLaTeX the same TeX Live fonts. Local development and CI use the same environment:
 
 ```sh
-# Download the fonts zip to the current directory and extract it to the fonts folder, for reference only
-curl -sSLf https://github.com/tuna/thuthesis-typst/releases/latest/download/fonts.zip -o fonts.zip
-unzip -q fonts.zip && rm fonts.zip
+nix develop
+just build
+```
 
-# Specify the font path when compiling, assuming thesis.typ is the entry file
-typst compile thesis.typ --font-path fonts
-# Or (for users who cloned the source repository)
-typst compile template/thesis.typ --root . --font-path fonts
-# Run typst file as script (for UNIX users who cloned the source repository only)
-# ./template/thesis.typ --root .. --font-path fonts
+Enable `nix-command` and `flakes` in Nix. TeX Live uses the maintainer's [2026 branch flake](https://github.com/chrjabs/nixpkgs/blob/445cccfc5e6a36a0aa49d9bd56e372d361c6c1b0/flake.nix), locked to the 2026-07-27 snapshot; upstream nixpkgs still provides TeX Live 2025. `flake.lock` fixes tool and font versions. To upgrade, run `nix flake update`; CI runs the builds. Typst packages are still downloaded on demand.
+
+With TeX Live already installed, you can also use its bundled fonts to compile the repository examples:
+
+```sh
+export TYPST_FONT_PATHS="$(kpsewhich -var-value=TEXMFDIST)/fonts"
+typst compile --root . template/thesis.typ
 ```
 
 For users of VSCode with Tinymist (other editors and more options are documented in the [Tinymist Documentation][Tinymist Docs]):
+
+With Nix, run `echo "$TYPST_FONT_PATHS"` inside `nix develop` and replace the font path below with the resulting directory.
 
 ```jsonc
 // .vscode/settings.json
 {
   "tinymist.fontPaths": [
     "${workspaceFolder}/fonts"
-  ]
+  ],
+  "tinymist.systemFonts": false
 }
 ```
 
