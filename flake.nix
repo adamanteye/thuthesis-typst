@@ -1,26 +1,24 @@
 {
   description = "TnTT development and CI toolchain";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-  # Upstream nixpkgs does not yet provide TeX Live 2026.
-  inputs.texlive-nixpkgs.url = "github:chrjabs/nixpkgs/texlive-2026";
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    flake-parts.url = "github:hercules-ci/flake-parts";
+  };
 
   outputs =
-    { nixpkgs, texlive-nixpkgs, ... }:
-    let
+    inputs@{ self, flake-parts, ... }:
+    flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [
         "x86_64-linux"
         "aarch64-linux"
         "aarch64-darwin"
       ];
-    in
-    {
-      devShells = nixpkgs.lib.genAttrs systems (
-        system:
+
+      perSystem =
+        { pkgs, ... }:
         let
-          pkgs = nixpkgs.legacyPackages.${system};
-          texPkgs = texlive-nixpkgs.legacyPackages.${system};
-          tex = texPkgs.texliveSmall.withPackages (
+          tex = pkgs.texliveSmall.withPackages (
             ps: with ps; [
               latexmk
               xetex
@@ -32,6 +30,7 @@
               newcomputermodern
               algorithms
               bibunits
+              bigfoot
               caption
               enumitem
               environ
@@ -46,36 +45,19 @@
               multirow
               threeparttable
               unicode-math
+              thuthesis
             ]
           );
-          fontDir = "${tex}/share/texmf/fonts";
-          fontConfig = pkgs.writeText "thuthesis-fonts.conf" ''
-            <?xml version="1.0"?>
-            <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
-            <fontconfig>
-              <dir>${fontDir}</dir>
-              <cachedir prefix="xdg">fontconfig</cachedir>
-            </fontconfig>
-          '';
         in
-        assert nixpkgs.lib.assertMsg (nixpkgs.lib.hasPrefix "texlive-2026-" tex.name)
-          "The TnTT toolchain requires TeX Live 2026.";
-        assert nixpkgs.lib.assertMsg (
-          pkgs.typst.version == "0.15.1"
-        ) "The TnTT toolchain requires Typst 0.15.1.";
         {
-          default = pkgs.mkShellNoCC {
-            packages = [
-              pkgs.typst
+          devShells.default = pkgs.mkShellNoCC {
+            packages = with pkgs; [
               tex
-              pkgs.fontconfig
-              pkgs.just
+              (typst.wrapper { fonts = [ texlivePackages.fandol ]; })
+              just
+              typstyle
             ];
-            TYPST_FONT_PATHS = fontDir;
-            TYPST_IGNORE_SYSTEM_FONTS = "true";
-            FONTCONFIG_FILE = fontConfig;
           };
-        }
-      );
+        };
     };
 }
