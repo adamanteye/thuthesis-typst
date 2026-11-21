@@ -1,10 +1,12 @@
-#import "figures.typ": object-number-at
-#import "headings.typ": heading-style
-#import "main-matter.typ": _body-style
-#import "matter.typ": _matter
-#import "page.typ": _page-numbering, _page-set, page-footer, page-header
-#import "runtime.typ": thuthesis-runtime
-#import "../pages/spine.typ": spine-page
+#import "../config.typ": chinese
+#import "equations.typ": equation-style
+#import "figures.typ": figure-style, subfigure-style
+#import "footnotes.typ": footnote-style
+#import "headings.typ": first-inert-text, fixed-heading-boundary, heading-style
+#import "page.typ": page-set
+#import "runtime.typ": clear-after-heading, runtime-at
+#import "../utils/text.typ": array-inset, body-baseline, body-font-size, tex-pt
+#import "../utils/util.typ": show-latexref
 
 #let document-meta(config, body) = {
   set document(
@@ -12,44 +14,85 @@
     author: if config.anonymous { () } else { (config.metadata.author,) },
     description: config.metadata.subject,
   )
-  (thuthesis-runtime.start)()
-  // A selected profile is authoritative. Do not silently embed an unrelated
-  // system fallback when one of its fonts lacks a glyph.
-  set text(fallback: false)
-  // The English abstract breaks closer to XeLaTeX with a lower hyphenation
-  // cost and with line-final hyphens kept inside the text block.
-  set text(costs: (hyphenation: 25%), overhang: false)
+  set text(fallback: false, costs: (hyphenation: 25%), overhang: false)
   body
-  (thuthesis-runtime.finish)()
 }
 
-#let document-body(config, body) = _page-set(config, _body-style(config, body))
-
-#let layout-instance(config) = (
-  frontmatter: body => _matter(config, "front", body),
-  mainmatter: body => _matter(config, "main", body),
-  appendix: body => _matter(config, "appendix", body),
-  backmatter: body => _matter(config, "back", body),
-  spine: () => {
-    (thuthesis-runtime.require-active)()
-    spine-page(config)
-  },
-  heading-style: (body, variant: "body") => heading-style(
-    config,
+#let _body-style(config, body) = {
+  let zh = chinese(config)
+  let leading = body-baseline - body-font-size
+  set text(
+    font: config.fonts.SongTi,
+    size: body-font-size,
+    top-edge: 0.8em,
+    bottom-edge: -0.2em,
+    lang: if zh { "zh" } else { "en" },
+    region: if zh { "CN" } else { none },
+    costs: (widow: 0%, orphan: 0%),
+  )
+  set par(
+    justify: true,
+    linebreaks: if zh { "simple" } else { "optimized" },
+    leading: leading,
+    spacing: leading,
+    first-line-indent: (
+      amount: if zh { 2em } else if config.degree == "bachelor" { 0.8cm } else {
+        0.74cm
+      },
+      all: true,
+    ),
+  )
+  show par: it => context {
+    let boundary = runtime-at(it.location()).after-heading
+    clear-after-heading()
+    if boundary != none {
+      let first-text = first-inert-text(it.body)
+      if first-text != none { fixed-heading-boundary(first-text) }
+    }
+    it
+  }
+  let label-sep = tex-pt(6)
+  let marker(content) = box(width: tex-pt(30) - label-sep, align(
+    right,
+    content,
+  ))
+  set list(
+    marker: marker(sym.bullet),
+    indent: 0pt,
+    body-indent: label-sep,
+    spacing: leading,
+  )
+  set enum(
+    numbering: n => marker(numbering("1.", n)),
+    indent: 0pt,
+    body-indent: label-sep,
+    spacing: leading,
+  )
+  set table(inset: array-inset(body-font-size, body-baseline))
+  show raw: set text(font: config.fonts.Mono)
+  let body = (
+    figure-style,
+    equation-style,
+    footnote-style,
+    heading-style,
+    subfigure-style,
+  ).fold(
     body,
-    variant: variant,
-  ),
-  page-header: () => page-header(config),
-  scanned-page-header: () => page-header(config, compensate-ascent: false),
-  page-footer: (numbering: _page-numbering) => page-footer(
-    config,
-    numbering: numbering,
-  ),
-  object-number-at: (scope, separator, number, location) => object-number-at(
-    config,
-    scope,
-    separator,
-    number,
-    location,
-  ),
-)
+    (acc, style) => style(config, acc),
+  )
+  let body = if config.use-latexref {
+    show-latexref(config.latexref-prefixes, body)
+  } else { body }
+  let body = if config.unnumbered-label not in (none, "") {
+    show math.equation.where(label: label(
+      config.unnumbered-label,
+    )): set math.equation(numbering: none)
+    body
+  } else { body }
+  if config.use-fakebold {
+    show strong: set text(stroke: 0.015em)
+    body
+  } else { body }
+}
+
+#let document-body(config, body) = page-set(config, _body-style(config, body))

@@ -1,10 +1,6 @@
 #import "text.typ": stretch-text
 
-#let _person(value) = if type(value) == dictionary {
-  value
-} else {
-  (name: value, title: none)
-}
+#let _person(value) = if type(value) == dictionary { value } else { (name: value, title: none) }
 
 #let graduate-person(value) = {
   let person = _person(value)

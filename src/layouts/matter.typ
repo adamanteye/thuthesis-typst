@@ -1,6 +1,6 @@
 #import "../config.typ": chinese
-#import "pagebreak.typ": clear-double-page, clear-page
-#import "runtime.typ": thuthesis-runtime
+#import "page.typ": clear-double-page
+#import "runtime.typ": transition
 
 #let _appendix-citation-style(config, body) = if (
   config.bibliography-style == "author-year"
@@ -14,10 +14,7 @@
       it.key,
       supplement: it.supplement,
       form: it.form,
-      style: bytes(csl.replace(
-        "THUTHESIS_APPENDIX",
-        numbering("A", chapter),
-      )),
+      style: bytes(csl.replace("THUTHESIS_APPENDIX", numbering("A", chapter))),
     )
   }
   show regex("^\\[[0-9]+\\]$"): label => context {
@@ -27,23 +24,21 @@
   body
 }
 
-#let _matter(config, kind, body) = {
-  (thuthesis-runtime.require-active)()
+#let matter(config, kind, body) = {
   if kind in ("front", "main") {
-    clear-double-page(config, weak: true)
+    clear-double-page(config)
     counter(page).update(1)
   } else if kind == "back" {
-    clear-page(weak: true)
+    pagebreak(weak: true)
   }
-  (thuthesis-runtime.transition)(kind, appendix: kind == "appendix")
-  if kind == "appendix" { counter(heading).update(0) }
+  transition(kind)
   if kind == "appendix" {
-    // The semantic heading numbering is also used for PDF bookmarks. The
-    // chapter renderer supplies the same label visually, while this scoped
-    // pattern makes the bookmark read “附录 A …” instead of “1 …”.
+    counter(heading).update(0)
     set heading(numbering: if chinese(config) { "附录 A.1.1.1" } else {
       "APPENDIX A.1.1.1"
     })
     _appendix-citation-style(config, body)
-  } else { body }
+  } else {
+    body
+  }
 }

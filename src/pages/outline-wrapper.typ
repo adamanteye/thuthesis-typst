@@ -1,178 +1,120 @@
-#import "../config.typ": chapter-names, chinese, sans-fonts, serif-fonts
+#import "../config.typ": chapter-names, chinese
 #import "../layouts/chapter-title.typ": chapter-label, render-title
-#import "../layouts/runtime.typ": thuthesis-runtime
-#import "common.typ": _front-title-outlined, _inside, _special-chapter
-#import "../utils/text.typ": bp, tex-pt
+#import "../layouts/runtime.typ": runtime-at
+#import "common.typ": front-title-outlined, special-chapter
+#import "../utils/text.typ": (
+  body-baseline, body-font-size, body-top-skip, bp, tex-pt,
+)
 
-#let _page-at(location) = {
-  let matter = (thuthesis-runtime.matter-at)(location)
-  let value = counter(page).at(location).first()
-  numbering(if matter == "front" { "I" } else { "1" }, value)
-}
+#let page-at(location) = numbering(
+  if runtime-at(location).matter == "front" { "I" } else { "1" },
+  counter(page).at(location).first(),
+)
 
-// TeX's `titlerule*[4bp]{.}` advances by an invariant 4bp cell. Repeating
-// a bare period plus a gap makes the pitch depend on the font's period
-// advance and on Typst's justification of the leftover width.
-#let _dot-leader-cell = box(width: bp(4), align(right, [.]))
-
-#let _dot-leader = repeat(
-  _dot-leader-cell,
+// TeX's `titlerule*[4bp]{.}` advances by an invariant 4bp cell.
+#let dot-leader = repeat(
+  box(width: bp(4), align(right, [.])),
   gap: 0pt,
   justify: false,
 )
 
-// LaTeX holds each fixed-baseline line open with a strut whose height/depth
-// are 70%/30% of `baselineskip`. The page margin already contains TeX's
-// `topskip` for ordinary 12bp text, so keep that portion as weak `above`
-// spacing: it contributes in normal flow and disappears at a page boundary.
-#let _fixed-line-block(
+#let fixed-line-block(body, before: 0pt) = block(
+  above: body-top-skip + before,
+  below: 0pt,
+  width: 100%,
+  breakable: false,
+  inset: (
+    top: 0.7 * body-baseline - tex-pt(12),
+    bottom: 0.3 * body-baseline - 0.2 * body-font-size,
+  ),
   body,
-  size: bp(12),
-  baseline: bp(20),
-  before: 0pt,
-) = {
-  let page-top-skip = tex-pt(12) - 0.8 * size
-  let top-inset = 0.7 * baseline - tex-pt(12)
-  let bottom-inset = 0.3 * baseline - 0.2 * size
-  block(
-    above: page-top-skip + before,
-    below: 0pt,
-    width: 100%,
-    breakable: false,
-    inset: (top: top-inset, bottom: bottom-inset),
-    body,
-  )
-}
-
-// The first child of an outline has no preceding sibling, so its weak
-// `above` spacing is discarded even though the outline itself follows a
-// heading. Supply that portion once at the outline boundary.
-#let _fixed-line-start(size: bp(12), before: 0pt) = v(
-  tex-pt(12) - 0.8 * size + before,
-  weak: false,
 )
 
-// ThuThesis's English graduate TOC uses `\heiti`: it changes only the CJK
-// family, while Latin text stays in the surrounding serif family.
+#let fixed-line-start(before: 0pt) = v(body-top-skip + before, weak: false)
+
+// English graduate TOC `\heiti` switches only the CJK family while Latin stays serif.
 #let _toc-chapter-fonts(config) = if (
   not chinese(config) and config.degree != "bachelor"
 ) {
-  (serif-fonts(config).first(),) + sans-fonts(config).slice(1)
+  (config.fonts.SongTi.first(),) + config.fonts.HeiTi.slice(1)
 } else {
-  sans-fonts(config)
+  config.fonts.HeiTi
 }
 
 #let _toc-number(config, it) = context {
-  let element = it.element
-  if element.numbering == none {
-    []
+  let el = it.element
+  if el.numbering == none { return [] }
+  let loc = el.location()
+  let appendix = runtime-at(loc).matter == "appendix"
+  let values = counter(heading).at(loc)
+  if it.level == 1 {
+    chapter-label(
+      config,
+      numbering(if appendix { "A" } else { "1" }, values.first()),
+      appendix: appendix,
+    )
   } else {
-    let location = element.location()
-    let appendix = (thuthesis-runtime.appendix-at)(location)
-    let values = counter(heading).at(location)
-    if it.level == 1 {
-      let number = numbering(if appendix { "A" } else { "1" }, values.first())
-      chapter-label(config, number, appendix: appendix)
-    } else {
-      numbering(
-        if appendix { "A.1.1.1" } else { element.numbering },
-        ..values,
-      )
-    }
+    numbering(if appendix { "A.1.1.1" } else { el.numbering }, ..values)
   }
 }
 
 #let _toc-gap(config) = if (
-  (config.degree == "bachelor" and config.language == "chinese")
-    or (config.degree != "bachelor" and config.language == "english")
+  (config.degree == "bachelor" and chinese(config))
+    or (config.degree != "bachelor" and not chinese(config))
 ) { text(" ") } else { h(1em) }
 
-#let _toc-entry(env, it) = context {
+#let _toc-entry(config, it) = context {
   set par(first-line-indent: 0pt)
-  let config = env.config
-  let location = it.element.location()
-  let source-matter = (thuthesis-runtime.matter-at)(location)
-  if source-matter in ("appendix", "back") and it.level > 1 {
-    none
-  } else {
-    let numbered = it.element.numbering != none
-    let number = if numbered { _toc-number(config, it) } else { none }
-    let indent = if not numbered {
-      0pt
-    } else if (
-      config.degree == "bachelor" and config.language == "english"
-    ) {
-      (it.level - 1) * 0.5cm
-    } else {
-      (it.level - 1) * 1em
-    }
-    let chapter-entry = numbered and it.level == 1
-    let chapter-before = if (
-      chapter-entry
-        and config.degree == "bachelor"
-        and config.language == "english"
-    ) { bp(6) } else { 0pt }
-    let prefix = if numbered {
-      let body = [#number#_toc-gap(config)]
-      if chapter-entry {
-        text(font: _toc-chapter-fonts(config), body)
-      } else {
-        body
-      }
-    } else { none }
-    let outline-title = (thuthesis-runtime.heading-outline-at)(location)
-    // Special chapters may use a distinct display and outline title.
-    let title = if outline-title == auto { it.body() } else { outline-title }
-    let title = if it.level == 1 {
-      text(
-        font: _toc-chapter-fonts(config),
-        render-title(
-          config,
-          title,
-          kind: (thuthesis-runtime.heading-kind-at)(location),
-          target: "outline",
-          numbered: numbered,
-        ),
-      )
-    } else {
-      title
-    }
-    let styled-inner = [#title#box(width: 1fr, it.fill)#text(
-        font: serif-fonts(config),
-        _page-at(location),
-      )]
-    let entry = it.indented(prefix, styled-inner, gap: 0pt)
-    _fixed-line-block(
-      pad(
-        left: indent,
-        align(left, link(location, entry)),
+  let loc = it.element.location()
+  let state = runtime-at(loc)
+  if state.matter in ("appendix", "back") and it.level > 1 { return none }
+  let numbered = it.element.numbering != none
+  let en-bachelor = config.degree == "bachelor" and not chinese(config)
+  let indent = if not numbered { 0pt } else if en-bachelor {
+    (it.level - 1) * 0.5cm
+  } else { (it.level - 1) * 1em }
+  let chapter-entry = numbered and it.level == 1
+  let chapter-fonts = _toc-chapter-fonts(config)
+  let prefix = if numbered {
+    let body = [#_toc-number(config, it)#_toc-gap(config)]
+    if chapter-entry { text(font: chapter-fonts, body) } else { body }
+  } else { none }
+  let title = if it.level == 1 {
+    text(
+      font: chapter-fonts,
+      render-title(
+        config,
+        it.body(),
+        kind: state.heading-kind,
+        outline: true,
+        numbered: numbered,
       ),
-      before: chapter-before,
     )
-  }
+  } else { it.body() }
+  let inner = [#title#box(width: 1fr, it.fill)#text(
+      font: config.fonts.SongTi,
+      page-at(loc),
+    )]
+  fixed-line-block(
+    pad(left: indent, align(left, link(loc, it.indented(
+      prefix,
+      inner,
+      gap: 0pt,
+    )))),
+    before: if chapter-entry and en-bachelor { bp(6) } else { 0pt },
+  )
 }
 
-#let _table-of-contents(env, depth: 3, title: auto, header: auto) = _inside(
-  env,
-  config => {
-    let names = chapter-names(config)
-    _special-chapter(
-      env,
-      if title == auto { names.contents } else { title },
-      outlined: _front-title-outlined(config, "contents"),
-      header: header,
-      kind: "contents",
-    )
-    _fixed-line-start(
-      before: if config.degree == "bachelor"
-        and config.language == "english" { bp(6) } else { 0pt },
-    )
-    show outline.entry: it => _toc-entry(env, it)
-    set outline.entry(fill: _dot-leader)
-    outline(
-      title: none,
-      depth: depth,
-      indent: 0pt,
-    )
-  },
-)
+#let table-of-contents(config, depth: 3, title: auto, header: auto) = {
+  special-chapter(
+    if title == auto { chapter-names(config).contents } else { title },
+    outlined: front-title-outlined(config, "contents"),
+    header: header,
+    kind: "contents",
+  )
+  fixed-line-start(before: if config.degree == "bachelor"
+    and not chinese(config) { bp(6) } else { 0pt })
+  show outline.entry: it => _toc-entry(config, it)
+  set outline.entry(fill: dot-leader)
+  outline(title: none, depth: depth, indent: 0pt)
+}
