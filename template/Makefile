@@ -1,13 +1,18 @@
-MAKEFLAGS           += --no-builtin-rules
-SHELL               := /bin/bash
-TYPST               ?= typst
-FONT_DIR            := fonts
-CTAN_MIRROR         ?= https://mirrors.tuna.tsinghua.edu.cn/CTAN
-OPEN_FONTS_STAMP    := $(FONT_DIR)/.open-fonts.ready
-WINDOWS_FONTS_STAMP := $(FONT_DIR)/.windows.ready
-WINDOWS_FONT_SCRIPT := $(dir $(lastword $(MAKEFILE_LIST)))download-windows-fonts.sh
-TYPST_ARGS          ?= --font-path $(FONT_DIR)
-.PHONY: clean fonts help watch
+MAKEFLAGS    += --no-builtin-rules
+SHELL        := /bin/bash
+TYPST        ?= typst
+FONT_DIR     := fonts
+TYPST_ARGS   ?= --font-path $(FONT_DIR)
+CTAN_MIRROR  ?= https://mirrors.tuna.tsinghua.edu.cn/CTAN
+OPEN_ZIPS    := $(addprefix $(FONT_DIR)/,fandol.zip xits.zip tex-gyre.zip)
+WIN_PACKAGES := $(addprefix $(FONT_DIR)/, \
+	Microsoft-Windows-LanguageFeatures-Fonts-Hans-Package-amd64.cab \
+	Microsoft-Windows-Client-Desktop-Required-Package.ESD)
+
+.DEFAULT_GOAL := thesis.pdf
+.DELETE_ON_ERROR:
+.INTERMEDIATE: $(OPEN_ZIPS) $(WIN_PACKAGES) $(FONT_DIR)/windows.json
+.PHONY: clean fonts watch
 
 %.pdf: %.typ fonts
 	$(TYPST) compile --root .. $(TYPST_ARGS) $< $@
@@ -15,42 +20,37 @@ TYPST_ARGS          ?= --font-path $(FONT_DIR)
 watch: fonts
 	$(TYPST) watch --root .. $(TYPST_ARGS) thesis.typ thesis.pdf
 
-help:
-	@printf '%s\n' \
-		'Usage: make [target] [WIN=y]' \
-		'' \
-		'Targets:' \
-		'  thesis.pdf  Compile the example thesis.' \
-		'  watch       Recompile on file changes.' \
-		'  fonts       Download open fonts (add WIN=y for licensed Windows fonts).' \
-		'  clean       Remove the compiled example PDF.' \
-		'  help        Show this help.' \
-		'' \
-		'Variables: CTAN_MIRROR (default: TUNA), TYPST, TYPST_ARGS.'
+fonts: $(FONT_DIR)/.open-fonts.ready
+# ifeq ($(WIN),y)
+# fonts: $(FONT_DIR)/.windows.ready
+# endif
 
-FONT_TARGETS := $(OPEN_FONTS_STAMP)
-ifeq ($(WIN),y)
-FONT_TARGETS += $(WINDOWS_FONTS_STAMP)
-endif
+$(FONT_DIR)/%.zip:
+	mkdir -p "$(@D)"
+	curl -fsSL --retry 3 "$(CTAN_MIRROR)/fonts/$(@F)" -o "$@"
 
-fonts: $(FONT_TARGETS)
+$(FONT_DIR)/.open-fonts.ready: $(OPEN_ZIPS)
+	for pkg in $^; do unzip -joq "$$pkg" '*.otf' -d "$(@D)" || exit; done
+	touch "$@"
 
-$(OPEN_FONTS_STAMP):
-	mkdir -p $(FONT_DIR)
-	set -euo pipefail; \
-	tmp=$$(mktemp -d); trap 'rm -rf "$$tmp"' EXIT; \
-	for pkg in fandol xits tex-gyre; do \
-		curl --proto '=https' --tlsv1.2 -fsSL --retry 3 "$(CTAN_MIRROR)/fonts/$$pkg.zip" -o "$$tmp/$$pkg.zip"; \
-		unzip -joq "$$tmp/$$pkg.zip" '*.otf' -d "$(FONT_DIR)"; \
+$(FONT_DIR)/windows.json:
+	mkdir -p "$(@D)"
+	api=$${UUP_API:-https://api.uupdump.net}; \
+	build=$$(curl -fsSLG --retry 3 "$$api/listid.php" --data sortByDate=1 \
+	--data-urlencode "search=$${UUP_SEARCH:-Windows 11 24H2 amd64}" | \
+	jq -er '[.response.builds[] | select(.arch == "amd64" and .uuid)] | max_by(.created).uuid') && \
+	curl -fsSL --retry 3 "$$api/get.php?id=$$build" -o "$@"
+
+$(WIN_PACKAGES): $(FONT_DIR)/windows.json
+	curl -fL --retry 3 -o "$@" "$$(jq -r --arg name "$(@F)" \
+		'.response.files | with_entries(.key |= ascii_downcase) | .[$$name | ascii_downcase].url' "$<")"
+
+$(FONT_DIR)/.windows.ready: $(WIN_PACKAGES)
+	for pkg in $^; do \
+		7z e -y -ssc- -o"$(@D)" "$$pkg" -ir'!'{arial,cour,times}{,bd,i,bi}.ttf \
+		-ir'!'{simsun.ttc,simhei.ttf,simkai.ttf,simfang.ttf} || exit; \
 	done
-	touch $@
-
-$(WINDOWS_FONTS_STAMP): $(WINDOWS_FONT_SCRIPT)
-	bash "$(WINDOWS_FONT_SCRIPT)" "$(FONT_DIR)"
-	touch $@
+	touch "$@"
 
 clean:
 	rm -f thesis.pdf
-
-.DELETE_ON_ERROR:
-.DEFAULT_GOAL := thesis.pdf
