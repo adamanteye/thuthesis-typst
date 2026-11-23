@@ -5,13 +5,20 @@
 #import "layouts/matter.typ": matter
 #import "pages/abstract.typ": abstract-en, abstract-zh
 #import "pages/achievement.typ": achievements, resume
-#import "pages/bibliography.typ": bibliography-document, bibliography-thu, thuthesis-bib
-#import "pages/chapters.typ": acknowledgements, comments, committee, record-sheet, resolution
+#import "pages/bibliography.typ": (
+  bibliography-document, bibliography-thu, thuthesis-bib,
+)
+#import "pages/chapters.typ": (
+  acknowledgements, comments, committee, record-sheet, resolution,
+)
 #import "pages/copyright.typ": authorization
 #import "pages/cover.typ": first-title-page, second-title-page
 #import "pages/declaration.typ": statement
 #import "pages/fonts-display.typ": fonts-display
-#import "pages/list-of.typ": list-of-equations, list-of-figures, list-of-figures-and-tables, list-of-tables
+#import "pages/list-of.typ": (
+  list-of-equations, list-of-figures, list-of-figures-and-tables,
+  list-of-tables,
+)
 #import "pages/notation.typ": denotation
 #import "pages/outline-wrapper.typ": table-of-contents
 #import "pages/spine.typ": spine-page
@@ -41,7 +48,16 @@
   anonymous = sys.inputs.at("anonymous", default: anonymous) in (true, "true")
   twoside = sys.inputs.at("twoside", default: twoside)
 
-  let config = build-config(degree, degree-type, anonymous, twoside, fonts, info, bibliography, options.named())
+  let config = build-config(
+    degree,
+    degree-type,
+    anonymous,
+    twoside,
+    fonts,
+    info,
+    bibliography,
+    options.named(),
+  )
 
   (
     info: config.info,
@@ -50,7 +66,10 @@
     degree: config.degree,
     twoside: twoside,
     anonymous: config.anonymous,
-    meta: body => bibliography-document(config.bibliography, document-meta(config, body)),
+    meta: body => bibliography-document(config.bibliography, document-meta(
+      config,
+      body,
+    )),
     cover: () => first-title-page(config),
     cover-en: () => second-title-page(config),
     doc: document-body.with(config),

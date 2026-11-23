@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - main
-    paths:
+    paths: &thesis
       - "src/**"
       - "template/**"
       - "assets/**"
@@ -13,14 +13,7 @@ on:
       - ".github/workflows/build.yml"
   pull_request:
     types: [opened, edited, synchronize]
-    paths:
-      - "src/**"
-      - "template/**"
-      - "assets/**"
-      - "typst.toml"
-      - "flake.nix"
-      - "flake.lock"
-      - ".github/workflows/build.yml"
+    paths: *thesis
   workflow_dispatch:
 jobs:
   render-paper:

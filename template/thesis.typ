@@ -14,15 +14,40 @@
 #let language = sys.inputs.at("language", default: "chinese")
 #let english = language == "english"
 #let (
-  meta, cover, cover-en, doc, committee, copyright,
-  front-matter, abstract, abstract-en, outline-wrapper, figure-list, table-list, notation,
-  main-matter, bibliography-thu, appendix, back-matter,
-  acknowledge, declaration, achievement, achievements, comments, resolution, ..
+  meta,
+  cover,
+  cover-en,
+  doc,
+  committee,
+  copyright,
+  front-matter,
+  abstract,
+  abstract-en,
+  outline-wrapper,
+  figure-list,
+  table-list,
+  notation,
+  main-matter,
+  bibliography-thu,
+  appendix,
+  back-matter,
+  acknowledge,
+  declaration,
+  achievement,
+  achievements,
+  comments,
+  resolution,
+  ..,
 ) = define-config(
+  // 盲审模式，启用后会隐藏作者信息和部分页面
+  anonymous: false,
   degree: "master",
   degree-type: "academic",
   language: language,
-  twoside: (electronic: false, print: true).at(sys.inputs.at("output", default: "electronic")),
+  twoside: (electronic: false, print: true).at(sys.inputs.at(
+    "output",
+    default: "electronic",
+  )),
   thesis-type: sys.inputs.at("thesis-type", default: "thesis"),
   style-override: sys.inputs.at("style-override", default: "none"),
   info: (
@@ -41,7 +66,10 @@
     author: [薛瑞尼],
     author-en: [Xue Ruini],
     supervisor: ([郑纬民], [教授]),
+    // 多指导老师示例
+    // supervisor: ("某某某", "教授", "某某", "副教授"),
     supervisor-en: ([Zheng Weimin], [Professor]),
+    // 联合指导教师/副指导教师，通常本科生不填写
     associate-supervisor: ([陈文光], [教授]),
     associate-supervisor-en: ([Chen Wenguang], [Professor]),
     date: datetime(year: 2026, month: 8, day: 8),
