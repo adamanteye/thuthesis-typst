@@ -8,6 +8,8 @@ on:
       - "template/**"
       - "assets/**"
       - "typst.toml"
+      - "flake.nix"
+      - "flake.lock"
       - ".github/workflows/build.yml"
   pull_request:
     types: [opened, edited, synchronize]
@@ -16,6 +18,8 @@ on:
       - "template/**"
       - "assets/**"
       - "typst.toml"
+      - "flake.nix"
+      - "flake.lock"
       - ".github/workflows/build.yml"
   workflow_dispatch:
 jobs:
@@ -28,23 +32,14 @@ jobs:
         uses: typst-community/setup-typst@v5
         with:
           typst-version: 0.15.1
+      - name: Install Nix
+        uses: cachix/install-nix-action@fd24c48048070c1be9acd18c9d369a83f0fe94d7 # v31.8.1
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Install open fonts
-        shell: bash
         run: |
-          mkdir -p "$GITHUB_WORKSPACE/fonts"
-          archive_dir=$(mktemp -d)
-          trap 'rm -rf "$archive_dir"' EXIT
-          while read -r digest archive; do
-            curl --proto '=https' --tlsv1.2 -fLsS --retry 3 \
-              "https://mirrors.ctan.org/fonts/$archive" -o "$archive_dir/$archive"
-            (cd "$archive_dir" && printf '%s  %s\n' "$digest" "$archive" | sha256sum --check -)
-            unzip -qo "$archive_dir/$archive" -d "$GITHUB_WORKSPACE/fonts"
-          done <<'FONTS'
-          9278f01b417ded5766d98c3937192a1a6a2c73a5e94a3493fdfc932b2a55005a  fandol.zip
-          9f7d6711ba0892936a78399777e8656b03ef6001ab0d8493758e4727bebdd4cd  xits.zip
-          1773c470f9e388e087b68e3426e115af2cd236845a7e05ceb25b2a503409a7a3  tex-gyre.zip
-          FONTS
-          echo "TYPST_FONT_PATHS=$GITHUB_WORKSPACE/fonts" >> "$GITHUB_ENV"
+          nix build --no-update-lock-file .#open-fonts -o "$RUNNER_TEMP/fonts"
+          echo "TYPST_FONT_PATHS=$RUNNER_TEMP/fonts" >> "$GITHUB_ENV"
           echo "TYPST_IGNORE_SYSTEM_FONTS=true" >> "$GITHUB_ENV"
       - name: Render templates
         run: |

@@ -48,8 +48,28 @@
               thuthesis
             ]
           );
+          texOf =
+            pkg:
+            pkgs.lib.findFirst (p: pkgs.lib.hasSuffix "-tex" p.name) (
+              throw "missing -tex output for texlive package"
+            ) pkg.pkgs;
         in
         {
+          packages.open-fonts = pkgs.linkFarm "tntt-open-fonts" [
+            {
+              name = "fandol";
+              path = "${texOf pkgs.texlive.fandol}/fonts/opentype/public/fandol";
+            }
+            {
+              name = "tex-gyre";
+              path = "${texOf pkgs.texlive.tex-gyre}/fonts/opentype/public/tex-gyre";
+            }
+            {
+              name = "xits";
+              path = "${texOf pkgs.texlive.xits}/fonts/opentype/public/xits";
+            }
+          ];
+
           devShells.default = pkgs.mkShellNoCC {
             packages = with pkgs; [
               tex

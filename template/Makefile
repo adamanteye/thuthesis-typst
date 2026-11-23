@@ -2,14 +2,10 @@ MAKEFLAGS           += --no-builtin-rules
 SHELL               := /bin/bash
 TYPST               ?= typst
 FONT_DIR            := fonts
-FANDOL_ARCHIVE      := .fandol.zip
-XITS_ARCHIVE        := .xits.zip
-TEX_GYRE_ARCHIVE    := .tex-gyre.zip
+CTAN_MIRROR         ?= https://mirrors.tuna.tsinghua.edu.cn/CTAN
 OPEN_FONTS_STAMP    := $(FONT_DIR)/.open-fonts.ready
 WINDOWS_FONTS_STAMP := $(FONT_DIR)/.windows.ready
-WINDOWS_FONT_SCRIPT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))download-windows-fonts.sh
-WINDOWS_UUP_SEARCH  ?= Windows 11 24H2 amd64
-WINDOWS_UUP_ARCH    ?= amd64
+WINDOWS_FONT_SCRIPT := $(dir $(lastword $(MAKEFILE_LIST)))download-windows-fonts.sh
 TYPST_ARGS          ?= --font-path $(FONT_DIR)
 .PHONY: clean fonts help watch
 
@@ -21,30 +17,17 @@ watch: fonts
 
 help:
 	@printf '%s\n' \
-		'Usage:' \
-		'  make [target] [WIN=y]' \
+		'Usage: make [target] [WIN=y]' \
 		'' \
 		'Targets:' \
-		'  thesis.pdf       Compile the example thesis.' \
-		'  watch            Recompile the example thesis when files change.' \
-		'  fonts            Download the open Fandol, XITS, and TeX Gyre fonts.' \
-		'  clean            Remove the compiled example PDF.' \
-		'  help             Show this help.' \
+		'  thesis.pdf  Compile the example thesis.' \
+		'  watch       Recompile on file changes.' \
+		'  fonts       Download open fonts (add WIN=y for licensed Windows fonts).' \
+		'  clean       Remove the compiled example PDF.' \
+		'  help        Show this help.' \
 		'' \
-		'Windows fonts on Linux:' \
-		'  make WIN=y fonts' \
-		'' \
-		'  This command queries UUP dump for a Windows build, downloads the required' \
-		'  components from Microsoft delivery servers, checks the archives, and extracts' \
-		'  the fonts into fonts/. It requires curl, jq, 7z, and about 1 GiB of temporary' \
-		'  disk space. The command displays the Microsoft license warning and continues' \
-		'  only after the user explicitly enters y.' \
-		'  WINDOWS_UUP_SEARCH and WINDOWS_UUP_ARCH can override the build query.' \
-		'' \
-		'  Other operating systems should copy licensed Windows font files into fonts/.'
+		'Variables: CTAN_MIRROR (default: TUNA), TYPST, TYPST_ARGS.'
 
-# Microsoft Windows fonts are proprietary. `make WIN=y fonts` asks for explicit
-# license confirmation, then discovers Microsoft component URLs through UUP dump.
 FONT_TARGETS := $(OPEN_FONTS_STAMP)
 ifeq ($(WIN),y)
 FONT_TARGETS += $(WINDOWS_FONTS_STAMP)
@@ -54,17 +37,16 @@ fonts: $(FONT_TARGETS)
 
 $(OPEN_FONTS_STAMP):
 	mkdir -p $(FONT_DIR)
-	curl --proto '=https' --tlsv1.2 -sSLf https://mirrors.ctan.org/fonts/fandol.zip -o $(FANDOL_ARCHIVE)
-	unzip -q $(FANDOL_ARCHIVE) -d $(FONT_DIR)
-	curl --proto '=https' --tlsv1.2 -sSLf https://mirrors.ctan.org/fonts/xits.zip -o $(XITS_ARCHIVE)
-	unzip -q $(XITS_ARCHIVE) -d $(FONT_DIR)
-	curl --proto '=https' --tlsv1.2 -sSLf https://mirrors.ctan.org/fonts/tex-gyre.zip -o $(TEX_GYRE_ARCHIVE)
-	unzip -q $(TEX_GYRE_ARCHIVE) -d $(FONT_DIR)
+	set -euo pipefail; \
+	tmp=$$(mktemp -d); trap 'rm -rf "$$tmp"' EXIT; \
+	for pkg in fandol xits tex-gyre; do \
+		curl --proto '=https' --tlsv1.2 -fsSL --retry 3 "$(CTAN_MIRROR)/fonts/$$pkg.zip" -o "$$tmp/$$pkg.zip"; \
+		unzip -joq "$$tmp/$$pkg.zip" '*.otf' -d "$(FONT_DIR)"; \
+	done
 	touch $@
-	rm -f $(FANDOL_ARCHIVE) $(XITS_ARCHIVE) $(TEX_GYRE_ARCHIVE)
 
 $(WINDOWS_FONTS_STAMP): $(WINDOWS_FONT_SCRIPT)
-	bash "$(WINDOWS_FONT_SCRIPT)" "$(FONT_DIR)" "$(WINDOWS_UUP_SEARCH)" "$(WINDOWS_UUP_ARCH)"
+	bash "$(WINDOWS_FONT_SCRIPT)" "$(FONT_DIR)"
 	touch $@
 
 clean:
