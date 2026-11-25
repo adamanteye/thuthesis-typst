@@ -78,6 +78,7 @@
     id: [2026-01],
     discipline-level-1: [Computer Science and Technology],
     discipline-level-2: [Computer Systems Architecture],
+    // day is ignored in thesis, however required to make typst happy
     start-date: datetime(year: 2024, month: 8, day: 1),
     end-date: datetime(year: 2026, month: 7, day: 31),
   ),

@@ -248,6 +248,46 @@
   mark-after-heading("section", figure-correction: figure-correction)
 }
 
+#let _heading-ref(config, it) = {
+  let el = it.element
+  if (
+    el == none
+      or el.func() != heading
+      or el.numbering == none
+      or it.form != "normal"
+      or it.supplement != auto
+  ) {
+    return it
+  }
+  context {
+    let loc = el.location()
+    let appendix = runtime-at(loc).matter == "appendix"
+    let values = counter(heading).at(loc)
+    let zh = chinese(config)
+    let label = if el.level == 1 {
+      let number = numbering(if appendix { "A" } else { "1" }, values.first())
+      if appendix {
+        if zh [附录~#number] else [Appendix~#number]
+      } else if zh {
+        [第~#number~章]
+      } else {
+        [Chapter~#number]
+      }
+    } else {
+      let number = numbering(
+        if appendix { "A.1.1.1" } else { el.numbering },
+        ..values,
+      )
+      if zh {
+        [第~#number~节]
+      } else {
+        [Section~#number]
+      }
+    }
+    link(loc, label)
+  }
+}
+
 #let heading-style(config, body, variant: "body") = {
   set heading(numbering: "1.1.1.1", outlined: true)
   if variant == "committee" {
@@ -266,6 +306,7 @@
     )
     body
   } else if variant == "body" {
+    show ref: it => _heading-ref(config, it)
     show heading.where(level: 1): it => _chapter-heading(config, it)
     show heading
       .where(level: 2)
